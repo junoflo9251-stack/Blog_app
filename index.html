@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f6fed">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>블로그 사무실</title>
+<style>
+:root{--acc:#2f6fed;--bg:#f4f6fb;--card:#fff;--ink:#1f2937;--sub:#6b7280;--line:#e5e7eb;--soft:#eef3ff}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1420;--card:#171e2d;--ink:#e5e7eb;--sub:#9aa3b2;--line:#273044;--soft:#1d2a44}}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif;background:var(--bg);color:var(--ink);-webkit-text-size-adjust:100%}
+header{background:var(--acc);color:#fff;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+header h1{font-size:18px;margin:0}
+#run{margin-left:auto;background:#fff;color:var(--acc);border:0;border-radius:8px;padding:8px 12px;font-weight:700;font-size:14px}
+nav{display:flex;gap:4px;overflow-x:auto;background:var(--card);border-bottom:1px solid var(--line);padding:6px 10px;position:sticky;top:52px;z-index:4}
+nav button{flex:none;background:transparent;border:0;color:var(--sub);font-size:15px;padding:8px 12px;border-radius:8px}
+nav button.on{background:var(--soft);color:var(--acc);font-weight:700}
+main{max-width:980px;margin:14px auto;padding:0 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:10px 14px;font-weight:700;font-size:15px}
+.btn.ghost{background:var(--soft);color:var(--acc)}.btn.mini{padding:6px 10px;font-size:13px}
+select,input,textarea{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 10px}
+input{width:150px;max-width:100%}textarea{width:100%;height:280px;font-size:14px}
+iframe{width:100%;height:70vh;border:1px solid var(--line);border-radius:10px;background:#fff}
+.imgs{display:flex;gap:10px;flex-wrap:wrap}.imgs a{font-size:12px;color:var(--sub);text-decoration:none;text-align:center}
+.imgs img{width:140px;border-radius:10px;border:1px solid var(--line);display:block;margin-bottom:4px}
+pre{white-space:pre-wrap;font-size:14px;line-height:1.6;margin:8px 0 0;font-family:inherit}
+.msg{color:var(--sub);font-size:14px}.err{color:#dc2626}
+table{border-collapse:collapse;width:100%;font-size:14px}td,th{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:middle}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.kpi{background:var(--soft);border-radius:12px;padding:12px}.kpi .l{font-size:12px;color:var(--sub)}.kpi .v{font-size:21px;font-weight:700;margin-top:4px}
+.pick{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
+.pick b{font-size:16px}.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--soft);color:var(--acc);margin-right:4px}
+.tag.buy{background:#fff1e6;color:#c2410c}
+@media (max-width:600px){th:nth-child(4),td:nth-child(4),th:nth-child(5),td:nth-child(5){display:none}}
+</style>
+</head>
+<body>
+<header><h1>블로그 사무실</h1><button id="run">✍️ 지금 한 편</button></header>
+<nav>
+ <button data-t="today" class="on">오늘의 글</button><button data-t="kw">추천 주제</button><button data-t="money">수익</button>
+ <button data-t="links">쿠팡 링크</button><button data-t="hist">기록</button><button data-t="set">설정</button>
+</nav>
+<main>
+<div id="warn"></div>
+
+<section id="login" hidden><div class="card">
+ <b>처음 한 번만: GitHub 토큰 넣기</b>
+ <p class="msg">GitHub에서 만든 토큰(blog-office 저장소, Contents·Actions 읽기/쓰기)을 붙여 넣어요. 이 기기에만 저장되고 어디에도 보내지 않아요.</p>
+ <div class="row"><input id="tok" type="password" placeholder="github_pat_..." style="width:320px"><button class="btn" id="tokSave">저장</button></div>
+</div></section>
+
+<section id="today">
+ <div class="card row"><b>날짜</b><select id="dates"></select>
+  <button class="btn" id="copy">📋 본문 복사</button><button class="btn ghost" id="copytxt">텍스트만</button><span class="msg" id="cmsg"></span></div>
+ <div class="card"><b>이미지</b> <span class="msg">눌러서 저장 → 네이버에 올리기</span><div class="imgs" id="imgs" style="margin-top:10px"></div></div>
+ <div class="card"><iframe id="view" title="본문 미리보기"></iframe></div>
+ <div class="card"><b>검수 메모</b><pre id="memo" class="msg"></pre></div>
+</section>
+
+<section id="kw" hidden>
+ <div class="card"><b>오늘의 추천 주제 TOP 5</b> <span class="msg">검색량 · 경쟁 · 계절 · 글 종류 · 이미 쓴 글 제외로 계산</span><div id="picks"></div></div>
+ <div class="card"><b>예약된 주제</b> <span class="msg">위에서부터 다음 자동 글로 써져요</span><pre id="queue" class="msg"></pre></div>
+ <div class="card"><b>전체 후보</b> <span class="msg" id="kwname"></span><div id="kwbox" class="msg" style="margin-top:8px">불러오는 중…</div></div>
+</section>
+
+<section id="money" hidden>
+ <div class="card"><div class="stats" id="kpi"></div></div>
+ <div class="card"><b>하루 수익 (최근 30일)</b><div id="chart" style="margin-top:10px;overflow-x:auto"></div></div>
+ <div class="card"><b>숫자 입력</b> <span class="msg">블로그 통계 · 쿠팡 리포트 · 애드포스트</span>
+  <div class="row" style="margin-top:10px"><input type="date" id="sd"><input id="sv" placeholder="방문자 수" inputmode="numeric"><input id="sc" placeholder="쿠팡 수익(원)" inputmode="numeric"><input id="sa" placeholder="애드포스트(원)" inputmode="numeric"><button class="btn" id="ssave">저장</button><span class="msg" id="smsg"></span></div></div>
+</section>
+
+<section id="links" hidden><div class="card">
+ <p class="msg">한 줄에 하나: <b>단어|상품 이름|쿠팡 링크</b> — 글 키워드에 '단어'가 있으면 자동으로 붙어요.</p>
+ <textarea id="ltext"></textarea><div class="row" style="margin-top:10px"><button class="btn" id="lsave">저장</button><span class="msg" id="lmsg"></span></div>
+</div></section>
+
+<section id="hist" hidden>
+ <div class="card"><b>최근 실행</b><table id="runs"></table></div>
+ <div class="card"><b>지금까지 쓴 키워드</b><pre id="posted" class="msg"></pre></div>
+</section>
+
+<section id="set" hidden>
+ <div class="card">
+  <div class="row"><b style="width:140px">하루 자동 글 수</b><select id="ppd"><option>1</option><option>2</option><option>3</option></select><span class="msg">1편당 API 월 약 1.5~2만원</span></div>
+  <div class="row" style="margin-top:12px"><b style="width:140px">월 고정비(원)</b><input id="mcost" inputmode="numeric"></div>
+  <div class="row" style="margin-top:12px"><b style="width:140px">하루 목표(원)</b><input id="dgoal" inputmode="numeric"></div>
+  <div class="row" style="margin-top:14px"><button class="btn" id="setsave">설정 저장</button><span class="msg" id="setmsg"></span></div>
+ </div>
+ <div class="card"><b>이 기기 토큰</b><div class="row" style="margin-top:8px"><button class="btn ghost" id="logout">토큰 지우기</button></div></div>
+</section>
+</main>
+
+<script>
+const REPO = 'junoflo9251-stack/blog-office';
+const $ = s => document.querySelector(s);
+let TOKEN = ''; try { TOKEN = localStorage.getItem('gh_token') || ''; } catch (e) {}
+const API = 'https://api.github.com/repos/' + REPO;
+
+async function gh(method, path, body, raw) {
+  const r = await fetch(API + path, {method, headers: {
+    'Authorization': 'Bearer ' + TOKEN, 'X-GitHub-Api-Version': '2022-11-28',
+    'Accept': raw ? 'application/vnd.github.raw' : 'application/vnd.github+json'},
+    body: body ? JSON.stringify(body) : undefined, cache: 'no-store'});
+  if (!r.ok) { const e = new Error({401:'토큰이 틀렸거나 만료됐어요', 403:'토큰 권한이 부족해요', 404:'아직 파일이 없어요'}[r.status] || 'GitHub 오류 ' + r.status); e.status = r.status; throw e; }
+  if (raw === 'blob') return r.blob();
+  if (raw) return r.text();
+  return r.status === 204 ? {} : r.json();
+}
+const enc = p => p.split('/').map(encodeURIComponent).join('/');
+const text = async (p, fallback) => { try { return await gh('GET', '/contents/' + enc(p), null, true); } catch (e) { if (fallback !== undefined && e.status === 404) return fallback; throw e; } };
+async function put(p, t, msg) {
+  let sha; try { sha = (await gh('GET', '/contents/' + enc(p))).sha; } catch (e) {}
+  const b64 = btoa(String.fromCharCode(...new TextEncoder().encode(t)));
+  return gh('PUT', '/contents/' + enc(p), {message: msg, content: b64, sha});
+}
+const dispatch = () => gh('POST', '/actions/workflows/daily.yml/dispatches', {ref: 'main'});
+const err = e => $('#warn').innerHTML = e ? `<div class="card err">${e}</div>` : '';
+const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
+
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('main section').forEach(s => s.hidden = s.id !== b.dataset.t);
+  try { localStorage.setItem('tab', b.dataset.t); } catch (e) {}
+  ({today: loadToday, kw: loadKw, money: loadMoney, links: loadLinks, hist: loadHist, set: loadSet})[b.dataset.t]?.();
+});
+
+/* ---------- 오늘의 글 ---------- */
+let cur = {};
+async function loadToday() {
+  try {
+    const items = await gh('GET', '/contents/drafts');
+    const ds = items.filter(i => i.type === 'dir').map(i => i.name).sort().reverse();
+    const keep = $('#dates').value;
+    $('#dates').innerHTML = ds.map(d => `<option>${d}</option>`).join('');
+    if (keep && ds.includes(keep)) $('#dates').value = keep;
+    err(''); loadDraft();
+  } catch (e) { err(e.status === 404 ? '아직 자동으로 쓴 글이 없어요. 「지금 한 편」을 눌러 보세요.' : e.message); }
+}
+async function loadDraft() {
+  const d = $('#dates').value; if (!d) return;
+  const files = (await gh('GET', '/contents/drafts/' + d)).map(f => f.name);
+  cur = {d, files};
+  for (const n of ['본문.html', '본문.txt', '검수메모.txt']) if (files.includes(n)) cur[n] = await text(`drafts/${d}/${n}`);
+  $('#view').srcdoc = cur['본문.html'] || '<p>HTML 없음</p>';
+  $('#memo').textContent = cur['검수메모.txt'] || '';
+  const box = $('#imgs'); box.innerHTML = '';
+  for (const f of files.filter(f => f.endsWith('.png'))) {
+    const url = URL.createObjectURL(await gh('GET', `/contents/${enc(`drafts/${d}/${f}`)}`, null, 'blob'));
+    box.insertAdjacentHTML('beforeend', `<a href="${url}" download="${d}_${f}"><img src="${url}" alt="${f}">${f}</a>`);
+  }
+  if (!box.innerHTML) box.innerHTML = '<span class="msg">없음</span>';
+}
+$('#dates').onchange = loadDraft;
+$('#copy').onclick = async () => {
+  const doc = new DOMParser().parseFromString(cur['본문.html'] || '', 'text/html');
+  doc.body.firstElementChild?.remove();
+  try {
+    await navigator.clipboard.write([new ClipboardItem({'text/html': new Blob([doc.body.innerHTML], {type: 'text/html'}), 'text/plain': new Blob([doc.body.innerText], {type: 'text/plain'})})]);
+    $('#cmsg').textContent = '복사됐어요! 네이버 에디터에 붙여 넣기';
+  } catch (e) { await navigator.clipboard.writeText(cur['본문.txt'] || ''); $('#cmsg').textContent = '서식 복사가 막혀서 텍스트로 복사했어요'; }
+};
+$('#copytxt').onclick = async () => { await navigator.clipboard.writeText(cur['본문.txt'] || ''); $('#cmsg').textContent = '텍스트 복사됐어요'; };
+
+/* ---------- 추천 주제 (숫자 기반) ---------- */
+const SEASON = {
+  winter: ['가습','습도','결로','난방','보일러','동파','전기장판','전기매트','온수매트','방풍','단열','문풍지','외풍','히터','이불','건조','김장','패딩','뽁뽁이','에어캡','난로','온풍'],
+  spring: ['황사','미세먼지','공기청정','대청소','옷정리','이불','환기','봄','먼지','새학기','이사'],
+  summer: ['제습','곰팡','에어컨','선풍기','모기','장마','습기','냉감','여름','벌레','쿨'],
+  autumn: ['환절기','대청소','옷정리','이불','가습','김장','보일러','가을','단열']
+};
+const seasonNow = () => { const m = new Date().getMonth() + 1; return m >= 11 || m <= 2 ? 'winter' : m <= 5 ? 'spring' : m <= 8 ? 'summer' : 'autumn'; };
+const BUY = /추천|가격|비교|순위|best|베스트|가성비|구매|후기/i;
+const TIP = /방법|하는법|청소|세척|정리|제거|보관|설치|요령|사용법|관리|교체|냄새|막는|없애|방지|예방|차단|절약/;
+const BRAND = /다이슨|삼성|엘지|위닉스|쿠쿠|쿠첸|한일|케어팟|샤오미|필립스|신일|보국|일월|한경희|루메나|닥터|미닉스|휴롬|테팔|드롱기|발뮤다|브라운|조지루시|코웨이|청호|에어메이드|오아|플러스마이너스|보아르|쿠팡|이마트|다이소|업체|가격표|매장/;
+const COMPW = {'낮음': 1, '중간': 2, '높음': 3};
+function scoreRows(rows, posted) {
+  const sw = SEASON[seasonNow()];
+  const done = new Set(posted.map(s => s.replace(/\s/g, '')));
+  return rows.filter(r => !done.has(r.kw.replace(/\s/g, '')) && !/[A-Za-z]/.test(r.kw) && !BRAND.test(r.kw)).map(r => {
+    const season = sw.some(w => r.kw.includes(w));
+    const type = BUY.test(r.kw) ? '추천글' : TIP.test(r.kw) ? '팁글' : '정보글';
+    const c = COMPW[r.comp] || 2;
+    let s = r.vol / Math.pow(c, 1.5);
+    if (season) s *= 1.6;
+    if (type === '팁글') s *= 1.3;          // 신생 블로그: 링크 없는 팁 글이 노출에 유리
+    if (type === '추천글') s *= 1.15;       // 구매 의도 → 쿠팡 수익
+    if (r.vol < 300) s *= 0.5;
+    return {...r, season, type, score: Math.round(s)};
+  }).sort((a, b) => b.score - a.score);
+}
+function parseKw(md) {
+  return md.split('\n').filter(l => l.startsWith('|') && !l.includes('---')).slice(1).map(l => {
+    const c = l.split('|').slice(1, -1).map(x => x.trim());
+    return {kw: c[1], vol: +c[2] || 0, comp: c[3] || '중간'};
+  }).filter(r => r.kw);
+}
+async function reserve(kw, now) {
+  if (now && !confirm(`'${kw}' 주제로 지금 한 편 쓸까요? (5분쯤)`)) return;
+  const q = await text('queue.txt', '');
+  if (!q.split('\n').map(s => s.trim()).includes(kw)) await put('queue.txt', (q.trim() ? q.trim() + '\n' : '') + kw + '\n', '주제 예약: ' + kw);
+  if (now) await dispatch();
+  alert(now ? '시작했어요. 5분 뒤 「오늘의 글」에서 확인하세요.' : '예약했어요. 다음 자동 글이 이 주제로 써져요.');
+  loadKw();
+}
+async function loadKw() {
+  try {
+    const list = (await gh('GET', '/contents/')).map(i => i.name).filter(n => /^keywords_.*\.md$/.test(n)).sort();
+    const posted = (await text('posted.txt', '')).split('\n').filter(Boolean);
+    const q = (await text('queue.txt', '')).split('\n').map(s => s.trim()).filter(s => s && !posted.includes(s));
+    $('#queue').textContent = q.join('\n') || '없음 (레이더가 알아서 골라요)';
+    if (!list.length) { $('#kwbox').textContent = '아직 키워드 파일이 없어요. 내일 아침 자동 실행 후 생겨요.'; $('#picks').innerHTML = ''; return; }
+    const name = list[list.length - 1]; $('#kwname').textContent = name;
+    const ranked = scoreRows(parseKw(await text(name)), posted);
+    $('#picks').innerHTML = ranked.slice(0, 5).map((r, i) => `<div class="pick"><div class="row"><b>${i + 1}. ${r.kw}</b>
+      <span class="tag ${r.type === '추천글' ? 'buy' : ''}">${r.type}</span>${r.season ? '<span class="tag">시즌</span>' : ''}</div>
+      <div class="msg" style="margin:6px 0">월 ${r.vol.toLocaleString()}회 · 광고경쟁 ${r.comp} · 점수 ${r.score.toLocaleString()}</div>
+      <div class="row"><button class="btn mini ghost" data-k="${r.kw}">예약</button><button class="btn mini" data-k="${r.kw}" data-now="1">지금 쓰기</button></div></div>`).join('');
+    $('#kwbox').innerHTML = `<table><tr><th>키워드</th><th>월검색</th><th>종류</th><th>경쟁</th><th>점수</th><th></th></tr>${ranked.slice(0, 60).map(r =>
+      `<tr><td>${r.kw}</td><td>${r.vol.toLocaleString()}</td><td>${r.type}</td><td>${r.comp}</td><td>${r.score.toLocaleString()}</td><td><button class="btn mini ghost" data-k="${r.kw}">예약</button></td></tr>`).join('')}</table>`;
+    document.querySelectorAll('#kw button[data-k]').forEach(b => b.onclick = () => reserve(b.dataset.k, !!b.dataset.now).catch(e => alert(e.message)));
+  } catch (e) { $('#kwbox').textContent = e.message; }
+}
+
+/* ---------- 수익 ---------- */
+let SET = {posts_per_day: 1, monthly_cost: 50000, daily_goal: 50000};
+async function loadSet() {
+  try { Object.assign(SET, JSON.parse(await text('settings.json', '{}'))); } catch (e) {}
+  $('#ppd').value = SET.posts_per_day; $('#mcost').value = SET.monthly_cost; $('#dgoal').value = SET.daily_goal;
+}
+$('#setsave').onclick = async () => {
+  const b = {posts_per_day: +$('#ppd').value, monthly_cost: +$('#mcost').value || 0, daily_goal: +$('#dgoal').value || 0};
+  try { await put('settings.json', JSON.stringify(b, null, 2) + '\n', '설정 변경 (앱)'); SET = b; $('#setmsg').textContent = '저장됐어요. 다음 자동 실행부터 적용돼요.'; } catch (e) { $('#setmsg').textContent = e.message; }
+};
+async function loadMoney() {
+  await loadSet();
+  $('#sd').value = new Date(Date.now() + 9 * 3600e3).toISOString().slice(0, 10);
+  const t = await text('stats.csv', '날짜,방문자,쿠팡수익,애드포스트\n');
+  const rows = t.trim().split('\n').slice(1).filter(Boolean).map(l => { const [d, v, c, a] = l.split(','); return {d, v: +v, c: +c, a: +a}; });
+  const m = $('#sd').value.slice(0, 7), mr = rows.filter(r => r.d.startsWith(m));
+  const rev = mr.reduce((s, r) => s + r.c + r.a, 0), vis = mr.reduce((s, r) => s + r.v, 0), days = mr.length || 1, last = rows[rows.length - 1];
+  const per = vis ? rev / vis : 0;
+  const k = [['이번 달 수익', won(rev)], ['비용 회수율', (SET.monthly_cost ? rev / SET.monthly_cost * 100 : 0).toFixed(0) + '%'], ['월 고정비', won(SET.monthly_cost)],
+    ['이번 달 방문자', vis.toLocaleString() + '명'], ['하루 평균 수익', won(rev / days)], ['방문자 1명당', per.toFixed(1) + '원'],
+    ['목표까지 (최근일)', last ? won(Math.max(0, SET.daily_goal - last.c - last.a)) : '-'], ['목표 방문자 (추정)', per ? Math.round(SET.daily_goal / per).toLocaleString() + '명/일' : '-']];
+  $('#kpi').innerHTML = k.map(([l, v]) => `<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div></div>`).join('');
+  const r30 = rows.slice(-30), mx = Math.max(SET.daily_goal, ...r30.map(r => r.c + r.a), 1), W = Math.max(r30.length * 26, 260), gy = 160 - 150 * SET.daily_goal / mx;
+  $('#chart').innerHTML = r30.length ? `<svg width="${W}" height="182" role="img" aria-label="하루 수익 막대 그래프">
+    <line x1="0" x2="${W}" y1="${gy}" y2="${gy}" stroke="#ef4444" stroke-dasharray="4 4"/>
+    ${r30.map((r, i) => { const h = 150 * (r.c + r.a) / mx; return `<rect x="${i * 26 + 3}" y="${160 - h}" width="20" height="${Math.max(h, 1)}" rx="3" fill="#2f6fed"><title>${r.d} ${won(r.c + r.a)} · 방문 ${r.v}</title></rect><text x="${i * 26 + 13}" y="176" font-size="9" text-anchor="middle" fill="currentColor" opacity=".6">${r.d.slice(8)}</text>`; }).join('')}</svg><div class="msg">빨간 점선 = 하루 목표</div>` : '<span class="msg">아직 입력한 숫자가 없어요</span>';
+}
+$('#ssave').onclick = async () => {
+  $('#smsg').textContent = '저장 중…';
+  try {
+    const cur = await text('stats.csv', '날짜,방문자,쿠팡수익,애드포스트\n');
+    const rows = Object.fromEntries(cur.trim().split('\n').slice(1).filter(Boolean).map(l => [l.split(',')[0], l]));
+    const d = $('#sd').value; rows[d] = [d, +$('#sv').value || 0, +$('#sc').value || 0, +$('#sa').value || 0].join(',');
+    await put('stats.csv', '날짜,방문자,쿠팡수익,애드포스트\n' + Object.keys(rows).sort().map(k => rows[k]).join('\n') + '\n', '통계 입력 ' + d);
+    $('#smsg').textContent = '저장됐어요'; loadMoney();
+  } catch (e) { $('#smsg').textContent = e.message; }
+};
+
+/* ---------- 링크 · 기록 ---------- */
+async function loadLinks() { $('#ltext').value = await text('links.txt', '').catch(e => e.message); }
+$('#lsave').onclick = async () => { try { await put('links.txt', $('#ltext').value, '쿠팡 링크 수정 (앱)'); $('#lmsg').textContent = '저장됐어요. 다음 글부터 적용돼요.'; } catch (e) { $('#lmsg').textContent = e.message; } };
+async function loadHist() {
+  try {
+    const r = await gh('GET', '/actions/workflows/daily.yml/runs?per_page=8');
+    $('#runs').innerHTML = r.workflow_runs.map(x => `<tr><td>${new Date(x.created_at).toLocaleString('ko-KR', {month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'})}</td><td>${x.status === 'completed' ? (x.conclusion === 'success' ? '✅ 성공' : '❌ ' + x.conclusion) : '⏳ 진행 중'}</td><td><a href="${x.html_url}" target="_blank" rel="noopener">보기</a></td></tr>`).join('');
+  } catch (e) { $('#runs').textContent = e.message; }
+  $('#posted').textContent = await text('posted.txt', '').catch(e => e.message);
+}
+$('#run').onclick = async () => { if (!confirm('지금 글 한 편을 새로 쓸까요? (5분쯤, 텔레그램으로도 와요)')) return; try { await dispatch(); alert('시작했어요. 5분 뒤 「오늘의 글」에서 확인하세요.'); } catch (e) { alert(e.message); } };
+
+/* ---------- 시작 ---------- */
+$('#tokSave').onclick = () => { TOKEN = $('#tok').value.trim(); try { localStorage.setItem('gh_token', TOKEN); } catch (e) {} start(); };
+$('#logout').onclick = () => { try { localStorage.removeItem('gh_token'); } catch (e) {} location.reload(); };
+function start() {
+  const has = !!TOKEN;
+  $('#login').hidden = has;
+  document.querySelectorAll('main section:not(#login)').forEach(s => s.hidden = true);
+  if (!has) return;
+  let tab = 'today'; try { tab = localStorage.getItem('tab') || 'today'; } catch (e) {}
+  (document.querySelector(`nav button[data-t="${tab}"]`) || document.querySelector('nav button')).click();
+}
+start();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
