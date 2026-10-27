@@ -151,7 +151,7 @@ async function loadDraft() {
   $('#view').srcdoc = cur['본문.html'] || '<p>HTML 없음</p>';
   $('#memo').textContent = cur['검수메모.txt'] || '';
   const box = $('#imgs'); box.innerHTML = '';
-  for (const f of files.filter(f => f.endsWith('.png'))) {
+  for (const f of files.filter(f => /\.(png|jpe?g)$/i.test(f))) {
     const url = URL.createObjectURL(await gh('GET', `/contents/${enc(`drafts/${d}/${f}`)}`, null, 'blob'));
     box.insertAdjacentHTML('beforeend', `<a href="${url}" download="${d}_${f}"><img src="${url}" alt="${f}">${f}</a>`);
   }
